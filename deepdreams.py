@@ -8,10 +8,11 @@ from google.protobuf import text_format
 
 import caffe
 
+
 def showarray(a, title, fmt='png'):
 	a = np.uint8(np.clip(a, 0, 255))
 	#f = StringIO()
-	name = '/images/' + title + '.' + fmt
+	name = '/images/' + str(title) + '.' + fmt
 	PIL.Image.fromarray(a).save(name, fmt)
 	print name
 	#display(Image(data=f.getvalue()))
@@ -33,7 +34,9 @@ net = caffe.Classifier('tmp.prototxt', param_fn,
 
 # a couple of utility functions for converting to and from Caffe's input image layout
 def preprocess(net, img):
-	return np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
+	result = np.float32(np.rollaxis(img, 2)[::-1]) - net.transformer.mean['data']
+	print result
+	return result
 def deprocess(net, img):
 	return np.dstack((img + net.transformer.mean['data'])[::-1])
 
@@ -62,6 +65,8 @@ def make_step(net, step_size=1.5, end='inception_4c/output', jitter=32, clip=Tru
 def deepdream(net, base_img, end, iter_n=10, octave_n=4, octave_scale=1.4, clip=True, **step_params):
 	# prepare base images for all octaves
 	octaves = [preprocess(net, base_img)]
+	frame_number_title = 10000
+
 	for i in xrange(octave_n-1):
 		octaves.append(nd.zoom(octaves[-1], (1, 1.0/octave_scale,1.0/octave_scale), order=1))
 
@@ -84,7 +89,8 @@ def deepdream(net, base_img, end, iter_n=10, octave_n=4, octave_scale=1.4, clip=
 			if not clip: # adjust image contrast if clipping is disabled
 				vis = vis*(255.0/np.percentile(vis, 99.98))
 			ename = '-'.join(end.split('/'))
-			showarray(vis, '{}-{}-{}'.format(ename, octave, i))
+			frame_number_title += 1
+			showarray(vis, frame_number_title)
 			print octave, i, end, vis.shape
 			clear_output(wait=True)
 
@@ -92,6 +98,14 @@ def deepdream(net, base_img, end, iter_n=10, octave_n=4, octave_scale=1.4, clip=
 		detail = src.data[0]-octave_base
 	# returning the resulting image
 	return deprocess(net, src.data[0])
+
+# run it
+
+# params:
+#   img = /img.jpg
+#   iter_n = number of iterations
+#   octave_n = number of octaves
+#   octave_scale = how much to scale the image per octave
 
 img = np.float32(PIL.Image.open('img.jpg'))
 

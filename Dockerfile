@@ -39,6 +39,7 @@ RUN apt-get clean && apt-get update && apt-get install -y \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN curl https://bootstrap.pypa.io/get-pip.py | python
+RUN curl -sSL https://get.docker.com/ | sh
 
 RUN pip install scikit-image
 
@@ -52,6 +53,9 @@ RUN cd /root/caffe && \
 	echo 'INCLUDE_DIRS += /usr/include/hdf5/serial' >> Makefile.config && \
 	echo 'LIBRARY_DIRS += /usr/lib/x86_64-linux-gnu/hdf5/serial' >> Makefile.config && \
 	make -j"$(nproc)" all pycaffe
+
+RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
+  imagemagick
 
 ENV PYTHONPATH=/root/caffe/python
 WORKDIR /ddd
